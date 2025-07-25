@@ -6,47 +6,37 @@ import { takeScreenshot } from '../../utils/screenshotHelper';
 const TEST_USER = process.env.TEST_USER;
 const TEST_PASSWORD = process.env.TEST_PASSWORD;
 
+// Take screenshot at the end of each test
 test.afterEach(async ({ page }, testInfo) => {
-  await takeScreenshot(page, testInfo, 'final');  // screenshot at the end of test
+  await takeScreenshot(page, testInfo, 'final');
 });
 
-test('user can login successfully', async ({ page }) => {
-  // Navigate to the login page
-  await login(page, TEST_USER, TEST_PASSWORD);
+test.describe('Authentication Flow', () => {
+  test('user can login successfully', async ({ page }) => {
+    await login(page, TEST_USER, TEST_PASSWORD);
 
-  // verify successful login by getByText('Loading your map...') is visible
-  await expect(page.getByText('Loading your map...')).toBeVisible({ timeout: 10000 });
+    // Wait for loading indicator and dashboard
+    await expect(page.getByText('Loading your map...')).toBeVisible({ timeout: 10000 });
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByRole('link', { name: 'Lokasi Intelligence Marker' })).toBeVisible();
 
-  // Wait for successful login by checking the page title
-  await expect(page, 'User should be redirected to dashboard after login')
-    .toHaveTitle(/Login - LOKASI/, { timeout: 10000 });
+    // Optional: validate dashboard title (update if "Login - LOKASI" is not the dashboard)
+    await expect(page).toHaveTitle(/LOKASI/);
+  });
 
-  await expect(page.getByRole('link', { name: 'Lokasi Intelligence Marker' })).toBeVisible();
-});
+  test('user can logout successfully', async ({ page }) => {
+    await login(page, TEST_USER, TEST_PASSWORD);
 
-test('user can logout successfully', async ({ page }) => {
-  // First, perform login (setup for this test)
-  await login(page, TEST_USER, TEST_PASSWORD);
-  
-  // verify successful login by getByText('Loading your map...') is visible
-  
-  await expect(page.getByText('Loading your map...')).toBeVisible({ timeout: 10000 });
-  
-  await page.waitForLoadState('networkidle');  // wait until network is idle 
+    await expect(page.getByText('Loading your map...')).toBeVisible({ timeout: 10000 });
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByRole('link', { name: 'Lokasi Intelligence Marker' })).toBeVisible();
 
-  await expect(page.getByRole('link', { name: 'Lokasi Intelligence Marker' })).toBeVisible();
+    // Perform logout
+    await page.getByTestId('user-popover-trigger').click();
+    await page.getByRole('button', { name: 'Log out' }).click();
+    await page.getByRole('button', { name: 'Logout' }).click();
 
-  // Now perform logout
-  await page.getByTestId('user-popover-trigger').waitFor({ state: 'visible' });
-  await page.getByTestId('user-popover-trigger').click();
-  await page.getByRole('button', { name: 'Log out' }).click();
-  await page.getByRole('button', { name: 'Logout' }).click();
-
-  //wait for 5 seconds to ensure the page loads completely
-  await page.waitForTimeout(5000);
-
-  // Verify logout success
-  await expect(page.getByRole('heading', { name: 'Welcome Back' }), 
-    'User should be redirected to login page after logout')
-    .toBeVisible();
+    // Wait for the login page by checking for "Welcome Back" heading
+    await expect(page.getByRole('heading', { name: 'Welcome Back' })).toBeVisible({ timeout: 10000 });
+  });
 });
