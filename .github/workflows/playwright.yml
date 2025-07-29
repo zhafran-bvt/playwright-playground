@@ -32,11 +32,16 @@ jobs:
         run: npm run test
 
       - name: Generate Allure report
-        if: always()   # <-- This line ensures the step runs even if previous steps failed
+        if: always()
         run: npm run allure:generate
 
+      - name: Add Netlify headers for Allure attachments
+        if: always()
+        run: |
+          echo '/attachments/*\n  Content-Type: image/png' > allure-report/_headers
+
       - name: Deploy Allure report to Netlify
-        if: always()   # <-- This line ensures the step runs even if previous steps failed
+        if: always()
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
