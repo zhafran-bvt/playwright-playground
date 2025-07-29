@@ -1,44 +1,45 @@
-name: Playwright E2E Tests
+name: Playwright Tests & Deploy Allure Report to Netlify
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
+    branches: [main]
 
 jobs:
-  Regression:
+  test-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      TEST_USER: ${{ secrets.TEST_USER }}
+      TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+      API_BASE_URL: ${{ secrets.API_BASE_URL }}
+      API_CLIENT_ID: ${{ secrets.API_CLIENT_ID }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
-
       - name: Run Playwright tests
         run: npm run test
 
-      - name: Generate Allure report (static mode)
-        run: npx allure generate --static allure-results --clean -o allure-report
+      - name: Generate Allure report
+        run: npm run allure:generate
 
-      - name: Upload Allure HTML report
-        uses: actions/upload-artifact@v4
-        with:
-          name: allure-report
-          path: allure-report
+      - name: Deploy Allure report to Netlify
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          npm install -g netlify-cli
+          npx netlify deploy --dir=allure-report --site=$NETLIFY_SITE_ID --auth=$NETLIFY_AUTH_TOKEN --prod
 
-      - name: Upload Playwright HTML report
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: playwright-report
+      - name: Share Netlify URL
+        run: echo "Allure report deployed to Netlify. Visit your Netlify dashboard to get the public URL."
