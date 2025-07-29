@@ -1,13 +1,18 @@
 import { test, expect } from '@playwright/test';
 import { login } from '../../utils/loginHelper';
 import { takeScreenshot } from '../../utils/screenshotHelper';
+import { attachToAllure } from '../../utils/allureHelper';
 
 // Extract credentials from environment variables
 const TEST_USER = process.env.TEST_USER;
 const TEST_PASSWORD = process.env.TEST_PASSWORD;
 
-// Take screenshot at the end of each test
+// Take screenshot at the end of each test and attach to Allure
 test.afterEach(async ({ page }, testInfo) => {
+  // Take screenshot and attach to Allure
+  const screenshot = await page.screenshot();
+  await attachToAllure(testInfo, 'Final Screenshot', screenshot, 'image/png');
+  // Optionally save to disk as well
   await takeScreenshot(page, testInfo, 'final');
 });
 
@@ -20,7 +25,6 @@ test.describe('Authentication Flow', () => {
     await page.waitForLoadState('networkidle');
     await expect(page.getByRole('link', { name: 'Lokasi Intelligence Marker' })).toBeVisible();
 
-    // Optional: validate dashboard title (update if "Login - LOKASI" is not the dashboard)
     await expect(page).toHaveTitle(/LOKASI/);
   });
 
@@ -31,12 +35,10 @@ test.describe('Authentication Flow', () => {
     await page.waitForLoadState('networkidle');
     await expect(page.getByRole('link', { name: 'Lokasi Intelligence Marker' })).toBeVisible();
 
-    // Perform logout
     await page.getByTestId('user-popover-trigger').click();
     await page.getByRole('button', { name: 'Log out' }).click();
     await page.getByRole('button', { name: 'Logout' }).click();
 
-    // Wait for the login page by checking for "Welcome Back" heading
     await expect(page.getByRole('heading', { name: 'Welcome Back' })).toBeVisible({ timeout: 10000 });
   });
 });

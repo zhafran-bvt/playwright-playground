@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { login } from '../../utils/loginHelper';
 import { takeScreenshot } from '../../utils/screenshotHelper';
+import { attachToAllure } from '../../utils/allureHelper';
 import { DATASETS } from '../datasets';
 
 const TEST_USER = process.env.TEST_USER;
@@ -14,6 +15,10 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.afterEach(async ({ page }, testInfo) => {
+  // Take screenshot and attach to Allure
+  const screenshot = await page.screenshot();
+  await attachToAllure(testInfo, 'Final Screenshot', screenshot, 'image/png');
+  // Optionally save to disk as well
   await takeScreenshot(page, testInfo, 'final');
 });
 
@@ -29,14 +34,11 @@ test.describe('Data Explorer', () => {
     await expect(page.getByTestId('modal').getByRole('heading')).toContainText('Dataset Explorer', { timeout: 10000 });
     await page.getByRole('button', { name: DATASETS.BVT }).click();
 
-    // Wait for Add Dataset button to be enabled instead of fixed timeout
     const addButton = page.getByTestId('modal').getByRole('button', { name: 'Add Dataset' });
     await expect(addButton).toBeEnabled({ timeout: 10000 });
 
-    //do wait 5 seconds
     await page.waitForTimeout(5000);
     await addButton.click();
-    // Wait for notification and dashboard link
     await expect(page.getByLabel('Notifications Alt+T').locator('span')).toContainText(DATASETS.BVT, { timeout: 10000 });
     await expect(page.getByRole('link', { name: 'Lokasi Intelligence Marker' })).toBeVisible({ timeout: 10000 });
   });
@@ -50,10 +52,8 @@ test.describe('Data Explorer', () => {
     const addButton = page.getByTestId('modal').getByRole('button', { name: 'Add Dataset' });
     await expect(addButton).toBeEnabled({ timeout: 10000 });
 
-    //do wait 5 seconds
     await page.waitForTimeout(5000);
     await addButton.click();
-    // Wait for notification and dashboard link
     await expect(page.getByLabel('Notifications Alt+T').locator('span')).toContainText(DATASETS.USER, { timeout: 10000 });
     await expect(page.getByRole('link', { name: 'Lokasi Intelligence Marker' })).toBeVisible({ timeout: 10000 });
   });
@@ -67,10 +67,8 @@ test.describe('Data Explorer', () => {
     const addButton = page.getByTestId('modal').getByRole('button', { name: 'Add Dataset' });
     await expect(addButton).toBeEnabled({ timeout: 10000 });
 
-    //do wait 5 seconds
     await page.waitForTimeout(5000);
     await addButton.click();
-    // Wait for notification and dashboard link
     await expect(page.getByLabel('Notifications Alt+T').locator('span')).toContainText(DATASETS.USER, { timeout: 10000 });
     await expect(page.getByRole('link', { name: 'Lokasi Intelligence Marker' })).toBeVisible({ timeout: 10000 });
   });

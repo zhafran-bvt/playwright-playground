@@ -1,13 +1,13 @@
 import { test, expect } from '@playwright/test';
 import { login } from '../../utils/loginHelper';
 import { takeScreenshot } from '../../utils/screenshotHelper';
+import { attachToAllure } from '../../utils/allureHelper';
 import { DATASETS } from '../datasets';
 import { time } from 'console';
 
 const TEST_USER = process.env.TEST_USER;
 const TEST_PASSWORD = process.env.TEST_PASSWORD;
 
-// Shared login & dashboard navigation setup for all Data Explorer tests
 test.beforeEach(async ({ page }) => {
   await login(page, TEST_USER, TEST_PASSWORD);
   await expect(page.getByText('Loading your map...')).toBeVisible({ timeout: 10000 });
@@ -16,6 +16,10 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.afterEach(async ({ page }, testInfo) => {
+  // Take screenshot and attach to Allure
+  const screenshot = await page.screenshot();
+  await attachToAllure(testInfo, 'Final Screenshot', screenshot, 'image/png');
+  // Optionally save to disk as well
   await takeScreenshot(page, testInfo, 'final');
 });
 
@@ -27,10 +31,8 @@ test.describe('Spatial Analysis', () => {
 
     await page.getByRole('button', { name: DATASETS.BVT }).click();
     await expect(page.getByTestId('modal').getByRole('button', { name: 'Add Dataset' })).toBeVisible();
-    //wait 3 seconds before clicking the button to ensure the modal is fully loaded
     await page.waitForTimeout(3000);
     await page.getByRole('button', { name: 'Add Dataset' }).dblclick();
-    // Wait for the dataset to finish adding (replace with a more specific wait if possible)
     await expect(page.getByLabel('Notifications Alt+T').locator('span')).toContainText(DATASETS.BVT, { timeout: 10000 });
     await expect(page.getByRole('link', { name: 'Lokasi Intelligence Marker' })).toBeVisible({ timeout: 10000 }); 
     
@@ -44,7 +46,6 @@ test.describe('Spatial Analysis', () => {
     await page.getByRole('textbox', { name: 'Search Country' }).click();
     await page.getByRole('menuitem', { name: 'Indonesia' }).click();
     await page.getByRole('textbox', { name: 'Search Province' }).click();
-    await page.getByRole('textbox', { name: 'Search Province' }).click();
     await page.getByRole('textbox', { name: 'Search Province' }).fill('Dki');
     await page.getByRole('menuitem', { name: 'Dki Jakarta' }).click();
     await page.getByRole('textbox', { name: 'Search City' }).click();
@@ -53,7 +54,6 @@ test.describe('Spatial Analysis', () => {
     await page.getByRole('menuitem', { name: 'Duren Sawit' }).click();
     await page.getByRole('button', { name: 'Save', exact: true }).click();
 
-    // Scroll to the component before clicking
     await page.locator('.flex.flex-col.mt-3').first().scrollIntoViewIfNeeded();
 
     await page.locator('label').filter({ hasText: 'H3H3 (Hexagonal Hierarchical' }).click();

@@ -45,8 +45,8 @@ export default defineConfig({
       name: 'api-tests',
       testDir: './tests/api', // Specify API test directory
       use: {
-        // API-specific settings
-        baseURL: 'https://api.staging.lokasi.com' // Set your API base URL
+        baseURL: process.env.API_BASE_URL || 'https://api.staging.lokasi.com',
+        ignoreHTTPSErrors: true, // <--- Add this line
       },
     },
   ],
