@@ -7,7 +7,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  Regression:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,8 +28,8 @@ jobs:
       - name: Run Playwright tests
         run: npm run test
 
-      - name: Generate Allure report
-        run: npx allure generate allure-results --clean -o allure-report
+      - name: Generate Allure report (static mode)
+        run: npx allure generate --static allure-results --clean -o allure-report
 
       - name: Upload Allure HTML report
         uses: actions/upload-artifact@v4
