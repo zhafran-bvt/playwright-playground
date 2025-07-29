@@ -9,6 +9,7 @@ on:
 jobs:
   test-and-deploy:
     runs-on: ubuntu-latest
+
     env:
       TEST_USER: ${{ secrets.TEST_USER }}
       TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
@@ -31,9 +32,11 @@ jobs:
         run: npm run test
 
       - name: Generate Allure report
+        if: always()   # <-- This line ensures the step runs even if previous steps failed
         run: npm run allure:generate
 
       - name: Deploy Allure report to Netlify
+        if: always()   # <-- This line ensures the step runs even if previous steps failed
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
@@ -42,4 +45,5 @@ jobs:
           npx netlify deploy --dir=allure-report --site=$NETLIFY_SITE_ID --auth=$NETLIFY_AUTH_TOKEN --prod
 
       - name: Share Netlify URL
+        if: always()
         run: echo "Allure report deployed to Netlify. Visit your Netlify dashboard to get the public URL."
