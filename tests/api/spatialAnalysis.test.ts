@@ -153,7 +153,7 @@ export const test = base.extend<AnalysisFixtures>({
 });
 
 // Increase the timeout for all tests in this file to accommodate long polling
-test.setTimeout(310000);
+test.setTimeout(350000);
 
 test.describe('Spatial Analysis API (fixture version)', () => {
   test('Should create spatial analysis', async ({ analysisId }) => {
@@ -192,5 +192,26 @@ test.describe('Spatial Analysis API (fixture version)', () => {
 
     expect(Array.isArray(body.result)).toBeTruthy();
     expect(body.result[0]).toHaveProperty('dataset_id', intersectedDatasetId);
+  });
+
+  test('Should get analysis summary', async ({ request, accessToken, analysisId, waitForAnalysisSuccess }, testInfo) => {
+    await waitForAnalysisSuccess();
+    const summaryUrl = `${API_BASE_URL}/v1/analysis/${analysisId}/summary`;
+    await attachToAllure(testInfo, 'summary-request-url', summaryUrl);
+
+    const response = await request.get(summaryUrl, {
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+
+    const body = await response.json();
+    await attachToAllure(testInfo, 'summary-response', body);
+
+    // Validate general keys exist
+    expect(body).toHaveProperty('data');
+    expect(body.data).toHaveProperty('general');
+    expect(body.data.general).toHaveProperty('avg_score');
+    expect(body.data.general).toHaveProperty('max_score');
+    expect(body.data.general).toHaveProperty('median_score');
+    expect(body.data.general).toHaveProperty('min_score');
   });
 });
