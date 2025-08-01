@@ -3,11 +3,13 @@ import { login } from '../../utils/loginHelper';
 import { takeScreenshot } from '../../utils/screenshotHelper';
 import { attachToAllure } from '../../utils/allureHelper';
 import { DATASETS } from '../datasets';
+import { maxCleanPage } from '../../utils/cacheHelper';
 
 const TEST_USER = process.env.TEST_USER;
 const TEST_PASSWORD = process.env.TEST_PASSWORD;
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ context, page }) => {
+  await maxCleanPage(context, page, 'https://staging.lokasi.com/intelligence');
   await login(page, TEST_USER, TEST_PASSWORD);
   await expect(page.getByText('Loading your map...')).toBeVisible({ timeout: 10000 });
   await page.waitForLoadState('networkidle');

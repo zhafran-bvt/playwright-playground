@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import TerminalReporter from './utils/reportHelper'; // Custom reporter for terminal output
 
 export default defineConfig({
   // Remove the global testDir since we'll define it per project
@@ -11,7 +12,7 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: [['html'], ['allure-playwright']],
+  reporter: [['html'], ['allure-playwright'], ['./utils/reportHelper']], // Use custom terminal reporter
   /* Shared settings for all the projects below. */
   use: {
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
