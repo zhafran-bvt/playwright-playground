@@ -3,16 +3,11 @@ import { login } from '../../utils/loginHelper';
 import { awaitWithScreenshot } from '../../utils/awaitWithScreenshot';
 import { maxCleanPage } from '../../utils/cacheHelper';
 
-
 const TEST_USER = process.env.TEST_USER;
 const TEST_PASSWORD = process.env.TEST_PASSWORD;
 
 test.beforeEach(async ({ context, page }) => {
-  await maxCleanPage(context, page, 'https://staging.lokasi.com/intelligence');
-  await login(page, TEST_USER, TEST_PASSWORD);
-  await expect(page.getByText('Loading your map...')).toBeVisible({ timeout: 10000 });
-  await page.waitForLoadState('networkidle');
-  await expect(page.getByRole('link', { name: 'Lokasi Intelligence Marker' })).toBeVisible();
+  await maxCleanPage(context, page, 'https://staging.lokasi.com/intelligence/login');
 });
 
 test.describe('Authentication Flow', () => {
