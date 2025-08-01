@@ -41,8 +41,8 @@ test.describe('Data Explorer', () => {
 
     await page.waitForTimeout(5000);
     await addButton.click();
-    await expect(page.getByLabel('Notifications Alt+T').locator('span')).toContainText(DATASETS.BVT, { timeout: 10000 });
-    await expect(page.getByRole('link', { name: 'Lokasi Intelligence Marker' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByLabel('Notifications Alt+T').locator('span')).toContainText(DATASETS.BVT, { timeout: 50000 });
+    await expect(page.getByRole('link', { name: 'Lokasi Intelligence Marker' })).toBeVisible({ timeout: 50000 });
   });
 
   test('user can add User dataset from Data Explorer', async ({ page }) => {

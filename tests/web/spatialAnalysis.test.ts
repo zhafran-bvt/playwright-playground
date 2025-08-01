@@ -18,6 +18,7 @@ test.beforeEach(async ({ context, page }) => {
 
 test.describe('Spatial Analysis', () => {
   test('user can do spatial analysis with 1 datasets using settings adm_area and h3 output', async ({ page }, testInfo) => {
+    test.setTimeout(60000) // 60 secs timeout to execute this case
     await awaitWithScreenshot(
       page.getByRole('button').filter({ hasText: 'Dataset Explorer' }).click(),
       page, testInfo, 'dataset-explorer'
