@@ -156,6 +156,7 @@ export const test = base.extend<AnalysisFixtures>({
 test.setTimeout(350000);
 
 test.describe('Spatial Analysis API (fixture version)', () => {
+  test.describe.configure({ mode: 'serial' }); 
   test('Should create spatial analysis', async ({ analysisId }) => {
     expect(analysisId).toBeTruthy();
     expect(typeof analysisId).toBe('string');
