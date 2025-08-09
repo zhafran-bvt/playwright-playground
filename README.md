@@ -1,6 +1,6 @@
-# Playwright Playground
+# Playwright + BDD Playground
 
-A collection of automated tests and utilities using [Playwright](https://playwright.dev/) for web UI and API testing, focused on the _Lokasi Intelligence_ platform. This repository demonstrates advanced Playwright usage, best practices, and custom helpers for robust, maintainable testing.
+Automated web UI and API tests for the Lokasi Intelligence platform using Playwright with BDD (Gherkin) via `playwright-bdd`. The suite generates Playwright specs from feature files and runs them across two projects: UI (`bdd-web`) and API (`bdd-api`).
 
 ---
 
@@ -10,6 +10,7 @@ A collection of automated tests and utilities using [Playwright](https://playwri
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
 - [Usage](#usage)
+- [BDD (Cucumber) Usage](#bdd-cucumber-usage)
 - [Test Examples](#test-examples)
 - [Custom Helpers](#custom-helpers)
 - [Contributing](#contributing)
@@ -19,11 +20,12 @@ A collection of automated tests and utilities using [Playwright](https://playwri
 
 ## Features
 
-- **Web UI Automated Tests**: Automated E2E tests for the _Lokasi Intelligence_ web app, including Data Explorer and Spatial Analysis modules.
-- **API Testing**: Automated API tests for spatial analysis and authentication endpoints.
-- **Playwright Multi-Project Config**: Runs tests across multiple browsers (Chrome, Edge) and for both API and UI.
-- **Custom Test Utilities**: Helpers for login, screenshot capture, and Allure reporting integration.
-- **Environment Configurable**: Easily switch targets and credentials via environment variables.
+- BDD-first: write scenarios in Gherkin under `features/**/*.feature`.
+- Two projects: `bdd-web` (UI) and `bdd-api` (API), split by tags.
+- Screenshots per step (UI): after each step (`@web` only) to aid debugging.
+- Request/Response attachments (API): all API calls are attached to Allure.
+- Allure reporting: generate and deploy rich HTML reports.
+- Env-configurable: credentials and endpoints via `.env` or CI secrets.
 
 ---
 
@@ -31,12 +33,16 @@ A collection of automated tests and utilities using [Playwright](https://playwri
 
 ```
 playwright-playground/
-├── playwright.config.ts        # Playwright multi-project configuration
-├── tests/
-│   ├── web/                   # Web UI Playwright tests
-│   ├── api/                   # API Playwright tests
-├── tests-examples/            # Example Playwright test specs (e.g. Todo app)
-├── utils/                     # Custom helper utilities
+├── playwright.config.ts        # Playwright + BDD projects (bdd-web, bdd-api)
+├── features/                   # Gherkin features + step definitions
+│   ├── *.feature               # Feature files (@web or @api tagged)
+│   └── steps/*.ts              # Step definitions
+├── tests/bdd/                  # Generated UI specs (gitignored)
+├── tests/api/bdd/              # Generated API specs (gitignored)
+├── utils/                      # Allure + auth + custom reporter
+│   ├── allureHelper.ts
+│   ├── authHelper.ts
+│   └── reportHelper.ts
 └── ...
 ```
 
@@ -78,24 +84,46 @@ API_CLIENT_ID=your_client_id
 
 ## Usage
 
-### Run All Tests
+### Test Commands
 
 ```bash
-npx playwright test
+# Generate BDD specs, run both projects
+npm run test            # or: npm run test:bdd:all
+
+# UI BDD only
+npm run test:bdd
+
+# API BDD only
+npm run test:bdd:api
+
+# Just regenerate BDD specs
+npm run bdd:gen
 ```
 
-### Run Only Web or API Tests
+### Allure Report
 
 ```bash
-npx playwright test --project="Google Chrome"
-npx playwright test --project="api-tests"
+# After running tests (results in ./allure-results)
+npm run allure:generate
+npm run allure:open
 ```
 
-### Generate Allure Report
+---
 
-```bash
-npx playwright test --reporter=allure-playwright
-npx allure serve ./allure-results
+## BDD (Cucumber) Usage
+
+Features under `features/**` are split by tags:
+- `@web`: included in `bdd-web` (UI) project
+- `@api`: included in `bdd-api` project
+
+Generated tests go to `tests/bdd/**` (UI) and `tests/api/bdd/**` (API) at runtime and are gitignored.
+
+`.env` is loaded automatically. Required keys:
+```
+TEST_USER=...
+TEST_PASSWORD=...
+API_BASE_URL=...
+API_CLIENT_ID=...
 ```
 
 ---
@@ -116,11 +144,13 @@ npx allure serve ./allure-results
 
 ---
 
-## Custom Helpers
+## Utilities
 
-- `utils/loginHelper.ts` — Programmatic login for web tests using supplied or `.env` credentials.
-- `utils/screenshotHelper.ts` — Consistent screenshot capture and file naming for test artifacts.
-- `utils/allureHelper.ts` — Allure reporting attachments for traceability.
+- `utils/allureHelper.ts` — Attach strings/JSON/Buffers to Allure.
+- `utils/authHelper.ts` — Obtain API access tokens in tests.
+- `utils/reportHelper.ts` — Concise terminal summary reporter.
+
+UI screenshots after every BDD step are handled in `features/steps/hooks.ts` and applied only to `@web` scenarios.
 
 ---
 

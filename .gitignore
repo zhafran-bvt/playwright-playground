@@ -10,4 +10,10 @@ allure-report/
 
 .allure/
 
-/screenshots/*.png
+/screenshots/
+tests/bdd/**/*.spec.js
+tests/api/bdd/**/*.spec.js
+
+# Local environment and OS noise
+.env
+.DS_Store

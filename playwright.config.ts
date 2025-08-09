@@ -1,5 +1,23 @@
 import { defineConfig, devices } from '@playwright/test';
+import 'dotenv/config';
+import { defineBddConfig } from 'playwright-bdd';
 import TerminalReporter from './utils/reportHelper'; // Custom reporter for terminal output
+
+// Configure BDD (Cucumber/Gherkin) -> Playwright bridge
+// Split BDD generated specs into Web and API to optimize execution
+const bddWebTestDir = defineBddConfig({
+  outputDir: './tests/bdd/web',
+  features: './features/**/*.feature',
+  steps: ['./features/steps/**/*.ts'],
+  tags: 'not @api',
+});
+
+const bddApiTestDir = defineBddConfig({
+  outputDir: './tests/api/bdd',
+  features: './features/**/*.feature',
+  steps: ['./features/steps/**/*.ts'],
+  tags: '@api',
+});
 
 export default defineConfig({
   // Remove the global testDir since we'll define it per project
@@ -21,33 +39,24 @@ export default defineConfig({
 
   /* Configure projects for different test types */
   projects: [
-    // Web UI Tests
+    // BDD (Gherkin) UI tests running under Playwright
     {
-      name: 'Google Chrome',
-      testDir: './tests/web', // Specify web test directory
-      use: { 
+      name: 'bdd-web',
+      testDir: bddWebTestDir,
+      use: {
         ...devices['Desktop Chrome'],
-        channel: 'chrome', // Use Chrome browser
-        baseURL: 'https://staging.lokasi.com' // Set your web base URL
+        channel: (process.env.PW_CHANNEL as any) || 'chrome',
+        baseURL: process.env.WEB_BASE_URL || 'https://staging.lokasi.com',
+        ignoreHTTPSErrors: true,
       },
     },
+    // BDD (Gherkin) API tests (no browser usage)
     {
-      name: 'Microsoft Edge',
-      testDir: './tests/web',
-      use: { 
-        ...devices['Desktop Edge'],
-        channel: 'msedge', // Use Edge browser
-        baseURL: 'https://staging.lokasi.com'
-      },
-    },
-
-    // API Tests
-    {
-      name: 'api-tests',
-      testDir: './tests/api', // Specify API test directory
+      name: 'bdd-api',
+      testDir: bddApiTestDir,
       use: {
         baseURL: process.env.API_BASE_URL || 'https://api.staging.lokasi.com',
-        ignoreHTTPSErrors: true, // <--- Add this line
+        ignoreHTTPSErrors: true,
       },
     },
   ],
