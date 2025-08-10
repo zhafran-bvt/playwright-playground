@@ -1,6 +1,6 @@
 # Playwright + BDD Playground
 
-Automated web UI and API tests for the Lokasi Intelligence platform using Playwright with BDD (Gherkin) via `playwright-bdd`. The suite generates Playwright specs from feature files and runs them across two projects: UI (`bdd-web`) and API (`bdd-api`).
+Automated Web UI and API tests for the Lokasi Intelligence platform using Playwright + BDD (Gherkin) via `playwright-bdd`. Feature files are compiled into Playwright tests and run across two projects: UI (`bdd-web`) and API (`bdd-api`).
 
 ---
 
@@ -11,8 +11,10 @@ Automated web UI and API tests for the Lokasi Intelligence platform using Playwr
 - [Getting Started](#getting-started)
 - [Usage](#usage)
 - [BDD (Cucumber) Usage](#bdd-cucumber-usage)
+- [Spatial Analysis Payloads](#spatial-analysis-payloads)
+- [Reporting](#reporting)
 - [Test Examples](#test-examples)
-- [Custom Helpers](#custom-helpers)
+- [Utilities](#utilities)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -34,14 +36,27 @@ Automated web UI and API tests for the Lokasi Intelligence platform using Playwr
 ```
 playwright-playground/
 ├── playwright.config.ts        # Playwright + BDD projects (bdd-web, bdd-api)
-├── features/                   # Gherkin features + step definitions
-│   ├── *.feature               # Feature files (@web or @api tagged)
-│   └── steps/*.ts              # Step definitions
+├── features/
+│   ├── api/                    # API feature files (@api)
+│   │   ├── api_auth.feature
+│   │   ├── api_datasets.feature
+│   │   ├── api_analysis_config.feature
+│   │   └── api_spatial_analysis_full.feature
+│   ├── web/                    # Web/UI feature files (@web)
+│   │   ├── login.feature
+│   │   ├── logout.feature
+│   │   ├── data_explorer.feature
+│   │   └── spatial_analysis.feature
+│   └── steps/*.ts              # Step definitions (shared)
 ├── tests/bdd/                  # Generated UI specs (gitignored)
 ├── tests/api/bdd/              # Generated API specs (gitignored)
-├── utils/                      # Allure + auth + custom reporter
+├── tests/fixtures/             # Test fixtures (files, JSON payloads)
+│   └── analysis-bodies/*.json  # Spatial analysis payload templates
+├── utils/                      # Helpers (auth, allure, reporter, etc.)
 │   ├── allureHelper.ts
 │   ├── authHelper.ts
+│   ├── fixtureHelper.ts
+│   ├── objectUtils.ts
 │   └── reportHelper.ts
 └── ...
 ```
@@ -78,6 +93,10 @@ TEST_USER=your@email.com
 TEST_PASSWORD=your_password
 API_BASE_URL=https://api.staging.lokasi.com
 API_CLIENT_ID=your_client_id
+
+# Optional (defaults in code)
+# PW_CHANNEL=chrome
+# WEB_BASE_URL=https://staging.lokasi.com
 ```
 
 ---
@@ -98,14 +117,22 @@ npm run test:bdd:api
 
 # Just regenerate BDD specs
 npm run bdd:gen
+
+# List tests without running
+npm run bdd:list           # UI
+npm run bdd:list:api       # API
 ```
 
-### Allure Report
+## Reporting
 
 ```bash
 # After running tests (results in ./allure-results)
 npm run allure:generate
 npm run allure:open
+
+Attachments
+- API steps attach request/response details to Allure with sensitive `Authorization` redacted.
+- Web steps attach a screenshot after every step tagged `@web`.
 ```
 
 ---
@@ -141,16 +168,42 @@ API_CLIENT_ID=...
   - Run spatial analysis jobs and verify results
   - Validate summary statistics from the API
 
+---
+
+## Spatial Analysis Payloads
+
+Payload templates live under `tests/fixtures/analysis-bodies/*.json`.
+
+Create using the default payload:
+- When I create a spatial analysis with default body
+
+Create using a named fixture:
+- When I create a spatial analysis from fixture "my_scenario.json"
+
+Customize parts of the payload without changing fixtures (deep-merged overrides):
+- Given I set analysis output type to "TYPE_GRID"            (or "TYPE_SITE_PROFILING")
+- Given I set grid type to "TYPE_GEOHASH" and level 3       (or "TYPE_H3" and level 7)
+- Given I set scoring option to "SCALED"
+- Given I set input id to "<uuid>"
+
+Full-flow scenario example (single scenario):
+- When I create → Then id received → Then status SUCCESS → Then fetch results → Then fetch intersected → Then fetch summary
+
 
 ---
 
 ## Utilities
 
-- `utils/allureHelper.ts` — Attach strings/JSON/Buffers to Allure.
-- `utils/authHelper.ts` — Obtain API access tokens in tests.
+- `utils/allureHelper.ts` — Attach strings/JSON/Buffers to Allure; standardized API request/response helpers.
+- `utils/authHelper.ts` — Obtain API access tokens; attaches redacted auth call to Allure.
+- `utils/fixtureHelper.ts` — Load JSON fixtures from `tests/fixtures`.
+- `utils/objectUtils.ts` — Small deep-merge helper for payload overrides.
 - `utils/reportHelper.ts` — Concise terminal summary reporter.
 
 UI screenshots after every BDD step are handled in `features/steps/hooks.ts` and applied only to `@web` scenarios.
+
+CI
+- See `.github/workflows/playwright.yml` for running both projects and deploying Allure to Netlify.
 
 ---
 
