@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { createBdd, test } from 'playwright-bdd';
 import jmespath from 'jmespath';
-import { attachToAllure } from '../../utils/allureHelper';
+import { attachToAllure, attachApiRequest, attachApiResponse, redactedAuthHeader } from '../../utils/allureHelper';
 import { SharedState } from './sharedState';
 
 const { When, Then } = createBdd(test);
@@ -14,11 +14,17 @@ const idsByTest = SharedState.idsByTest;
 
 When('I list datasets by source {string}', async ({ request, $testInfo }, source: string) => {
   const token = tokenByTest.get($testInfo.testId)!;
-  const res = await request.get(`${DATASETS_URL}?source=${encodeURIComponent(source)}`, {
+  const url = `${DATASETS_URL}?source=${encodeURIComponent(source)}`;
+  await attachApiRequest($testInfo, 'datasets-by-source-request', {
+    url,
+    method: 'GET',
+    headers: { ...redactedAuthHeader() },
+  });
+  const res = await request.get(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
   const json = await res.json();
-  await attachToAllure($testInfo, `${source}-datasets-response`, json);
+  await attachApiResponse($testInfo, 'datasets-by-source-response', { status: res.status(), body: json });
   expect(res.ok()).toBeTruthy();
   expect(Array.isArray(json.data)).toBeTruthy();
 
@@ -33,11 +39,17 @@ When('I list datasets by source {string}', async ({ request, $testInfo }, source
 
 When('I list datasets with aggregation {string}', async ({ request, $testInfo }, agg: string) => {
   const token = tokenByTest.get($testInfo.testId)!;
-  const res = await request.get(`${DATASETS_URL}?spatial_aggregation_type=${encodeURIComponent(agg)}`, {
+  const url = `${DATASETS_URL}?spatial_aggregation_type=${encodeURIComponent(agg)}`;
+  await attachApiRequest($testInfo, 'datasets-by-aggregation-request', {
+    url,
+    method: 'GET',
+    headers: { ...redactedAuthHeader() },
+  });
+  const res = await request.get(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
   const json = await res.json();
-  await attachToAllure($testInfo, `${agg}-datasets-response`, json);
+  await attachApiResponse($testInfo, 'datasets-by-aggregation-response', { status: res.status(), body: json });
   expect(res.ok()).toBeTruthy();
   expect(Array.isArray(json.data)).toBeTruthy();
 
@@ -68,7 +80,12 @@ When('I fetch schema for a random collected dataset id', async ({ request, $test
     headers: { Authorization: `Bearer ${token}` },
   });
   const json = await res.json();
-  await attachToAllure($testInfo, `schema-${randomId}`, json);
+  await attachApiRequest($testInfo, 'dataset-schema-request', {
+    url: `${DATASETS_URL}/${randomId}`,
+    method: 'GET',
+    headers: { ...redactedAuthHeader() },
+  });
+  await attachApiResponse($testInfo, 'dataset-schema-response', { status: res.status(), body: json });
   // store schema length in attachment; final assertion in Then
   (json as any)._schemaLen = Array.isArray(json.schema) ? json.schema.length : 0;
   // stash latest schema into shared state map for the test if needed later

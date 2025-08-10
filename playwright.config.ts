@@ -29,12 +29,20 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
+  /* Increase overall timeouts to accommodate slower envs */
+  // Global max time for the whole run (1 hour)
+  globalTimeout: 60 * 60 * 1000,
+  // Default per-test timeout (applies unless overridden by project)
+  timeout: 90 * 1000,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [['html'], ['allure-playwright'], ['./utils/reportHelper']], // Use custom terminal reporter
+  // Default expect configuration (belongs at top-level, not under `use`)
+  expect: { timeout: 30_000 },
   /* Shared settings for all the projects below. */
   use: {
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    // Enable tracing for all tests to ease debugging
+    trace: 'on',
   },
 
   /* Configure projects for different test types */
@@ -43,17 +51,26 @@ export default defineConfig({
     {
       name: 'bdd-web',
       testDir: bddWebTestDir,
+      // UI can be a bit slower on staging; modestly increase timeouts
+      timeout: 120 * 1000,
       use: {
         ...devices['Desktop Chrome'],
         channel: (process.env.PW_CHANNEL as any) || 'chrome',
         baseURL: process.env.WEB_BASE_URL || 'https://staging.lokasi.com',
         ignoreHTTPSErrors: true,
+        // Allow slower navigations and actions on shared envs
+        actionTimeout: 30_000,
+        navigationTimeout: 60_000,
       },
     },
     // BDD (Gherkin) API tests (no browser usage)
     {
       name: 'bdd-api',
       testDir: bddApiTestDir,
+      // Ensure API scenarios run in a single worker so shared state persists
+      workers: 1,
+      // Spatial analysis polling can take minutes; allow generous timeout
+      timeout: 10 * 60 * 1000,
       use: {
         baseURL: process.env.API_BASE_URL || 'https://api.staging.lokasi.com',
         ignoreHTTPSErrors: true,

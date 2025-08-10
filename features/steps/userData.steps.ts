@@ -3,7 +3,7 @@ import fs from 'fs';
 import { expect } from '@playwright/test';
 import { createBdd, test } from 'playwright-bdd';
 import { getAccessToken } from '../../utils/authHelper';
-import { attachToAllure } from '../../utils/allureHelper';
+import { attachApiRequest, attachApiResponse, redactedAuthHeader } from '../../utils/allureHelper';
 import { SharedState } from './sharedState';
 
 const { Given, When, Then } = createBdd(test);
@@ -18,7 +18,7 @@ const tokenByTest = SharedState.tokenByTest;
 const opIdByTest = SharedState.opIdByTest;
 
 Given('I have a valid API access token', async ({ request, $testInfo }) => {
-  const token = await getAccessToken(request);
+  const token = await getAccessToken(request, $testInfo);
   tokenByTest.set($testInfo.testId, token);
 });
 
@@ -32,11 +32,11 @@ When(
     if (!fs.existsSync(filePath)) throw new Error(`Test file not found: ${filePath}`);
     const fileBuffer = fs.readFileSync(filePath);
 
-    await attachToAllure($testInfo, 'import-request', {
+    await attachApiRequest($testInfo, 'dataset-import-request', {
       url: IMPORT_URL,
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      multipart: { name: datasetName, file: path.basename(filePath) },
+      headers: { ...redactedAuthHeader() },
+      body: { multipart: { name: datasetName, file: path.basename(filePath) } },
     });
 
     const res = await request.post(IMPORT_URL, {
@@ -51,7 +51,7 @@ When(
       },
     });
 
-    await attachToAllure($testInfo, 'import-response', {
+    await attachApiResponse($testInfo, 'dataset-import-response', {
       status: res.status(),
       body: await res.json(),
     });
@@ -70,16 +70,16 @@ Then('the import operation should succeed', async ({ request, $testInfo }) => {
   if (!token || !operationId) throw new Error('Missing token or operation ID');
 
   await expect.poll(async () => {
-    await attachToAllure($testInfo, 'import-status-request', {
+    await attachApiRequest($testInfo, 'dataset-import-status-request', {
       url: `${OPERATIONS_URL}/${operationId}`,
       method: 'GET',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { ...redactedAuthHeader() },
     });
     const res = await request.get(`${OPERATIONS_URL}/${operationId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const json = await res.json();
-    await attachToAllure($testInfo, 'import-status-response', {
+    await attachApiResponse($testInfo, 'dataset-import-status-response', {
       status: res.status(),
       body: json,
     });
@@ -90,7 +90,7 @@ Then('the import operation should succeed', async ({ request, $testInfo }) => {
     headers: { Authorization: `Bearer ${token}` },
   });
   const statusJson = await res.json();
-  await attachToAllure($testInfo, 'import-final-status-response', {
+  await attachApiResponse($testInfo, 'dataset-import-final-status-response', {
     status: res.status(),
     body: statusJson,
   });

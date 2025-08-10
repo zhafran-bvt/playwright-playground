@@ -24,3 +24,4 @@ Feature: Data Explorer
     And I switch to catalog "My Organization"
     And I add dataset "VISA Average Transaction"
     Then I see dataset notification "VISA Average Transaction"
+

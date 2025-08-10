@@ -1,0 +1,93 @@
+{
+  "datasets": [
+    {
+      "id": "f12383c0-2d9c-4c11-abda-c593a70b67b6",
+      "filter": [
+        {
+          "schema_id": "17cf5798-8fd0-47e4-af7b-5d448785b82a",
+          "filter": ["3174"],
+          "attribute_code": "adm_area_level_2"
+        }
+      ],
+      "weight": [
+        { "schema_id": "dffa056d-7b2c-48a6-9d79-948015eeabbc", "weight": 2.94 },
+        { "schema_id": "3077c12e-74ab-4d20-b2fb-39fd5121b334", "weight": 2.94 },
+        { "schema_id": "1b222f25-9401-4656-a877-0e578f55355f", "weight": 2.94 },
+        { "schema_id": "2bc4b814-0d3d-4b0f-8685-92e976f1858f", "weight": 2.94 },
+        { "schema_id": "dbe1fccf-3fa3-4b79-8210-ecdbf72dee11", "weight": 2.94 },
+        { "schema_id": "d6c5b2b7-c73c-4dfb-a80e-90692a757fa3", "weight": 2.94 },
+        { "schema_id": "e87ad122-4387-468c-836f-ef972df165eb", "weight": 2.94 },
+        { "schema_id": "a4098d7e-582f-4593-952e-4de1b108fc3d", "weight": 2.94 },
+        { "schema_id": "72ffa1e8-a110-4e81-a760-fa89599d33b4", "weight": 2.94 },
+        { "schema_id": "54731504-e18c-4af3-90e7-f0fef19bc798", "weight": 2.94 },
+        { "schema_id": "7c45f91b-31e1-4dd0-8d45-522f8f99072e", "weight": 2.94 },
+        { "schema_id": "bc8de919-bf4a-4142-8abb-6e4a51462b56", "weight": 2.94 },
+        { "schema_id": "8e9c2469-e5a4-42f2-8e65-9111b79ebdc7", "weight": 2.94 },
+        { "schema_id": "9b1eb8e1-91c7-43ea-94cd-b4a1a97f2484", "weight": 2.94 },
+        { "schema_id": "e3bb3e01-763f-4fbc-96c1-cceb71473d18", "weight": 2.94 },
+        { "schema_id": "d3ed2a87-027a-46db-bae0-ffa768beb5f0", "weight": 2.94 }
+      ]
+    },
+    {
+      "id": "8b36c3f1-4ffa-4845-bf47-4c21cc142d30",
+      "filter": [
+        {
+          "schema_id": "0037a3e7-15b2-4eba-b2fb-b22def62131a",
+          "filter": ["3175"],
+          "attribute_code": "adm_area_level_2"
+        }
+      ],
+      "weight": [
+        { "schema_id": "dea84a91-d43b-4f22-b6ee-b9751fe52786", "weight": 2.94 }
+      ]
+    },
+    {
+      "id": "89756b2a-cfb1-4e16-b9d6-c6d1ed55a44a",
+      "filter": [
+        {
+          "schema_id": "fff117ee-b1da-460f-906a-0dbdd1304db9",
+          "filter": ["3174"],
+          "attribute_code": "adm_area_level_2"
+        }
+      ],
+      "weight": [
+        { "schema_id": "226f7d81-e42e-4593-b08c-0dd595520de0", "weight": 2.94 }
+      ]
+    },
+    {
+      "id": "927b232a-adbf-4053-aa11-c4556d7ff1d0",
+      "filter": [
+        {
+          "schema_id": "c09b9671-7e11-4611-8f0d-bcb0c71f45d2",
+          "filter": ["3175"],
+          "attribute_code": "adm_area_level_2"
+        }
+      ],
+      "weight": [
+        { "schema_id": "88e80b50-83b1-464b-a172-a377213384e9", "weight": 2.94 },
+        { "schema_id": "01e361d2-2471-4701-8fdd-0ed12b83f3b7", "weight": 2.94 },
+        { "schema_id": "12b514fb-2ffe-4c28-af63-4085870cd793", "weight": 2.94 },
+        { "schema_id": "ae89a31f-dd87-437f-95e1-a1a1bd69c2bf", "weight": 2.94 },
+        { "schema_id": "75af1972-d6ec-46c7-a5b2-d1ee3aee805c", "weight": 2.94 },
+        { "schema_id": "6ff70723-0c76-4d3b-9d99-563aaafebf5a", "weight": 2.94 },
+        { "schema_id": "76df164d-f532-4e4e-90f7-a9d4a2ba7579", "weight": 2.94 },
+        { "schema_id": "fe24b44c-b569-45ea-aa2c-123d65a6c51f", "weight": 2.94 },
+        { "schema_id": "b39c98aa-6298-4b76-9ffa-ad72fcc0451a", "weight": 2.94 },
+        { "schema_id": "45e9eab6-9ef9-4c79-a039-d9da4cb3e242", "weight": 2.94 },
+        { "schema_id": "dc2ce253-8d6c-44f7-b759-6fd37401943d", "weight": 2.94 },
+        { "schema_id": "b3dceeda-8106-4cf9-a276-d4f2082c7bb2", "weight": 2.94 },
+        { "schema_id": "24a090c5-5867-462e-a0a6-990032c66ac6", "weight": 2.94 },
+        { "schema_id": "6117cb44-cf15-435b-9b74-34df14bac6e4", "weight": 2.94 },
+        { "schema_id": "d137bdc9-f6b9-4a05-84c4-5bb13958e273", "weight": 2.94 },
+        { "schema_id": "63272ca3-b0d4-42a2-bf56-bf48574ddb6e", "weight": 2.94 }
+      ]
+    }
+  ],
+  "input": { "id": "70294ab3-b8f0-4e17-8115-c0a5241b4edf" },
+  "output": {
+    "output_type": "TYPE_GRID",
+    "grid_config": { "grid_type": "TYPE_H3", "level": 6 },
+    "scoring_option": "SCALED"
+  }
+}
+

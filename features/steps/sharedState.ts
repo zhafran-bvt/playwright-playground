@@ -4,5 +4,6 @@ export const SharedState = {
   idsByTest: new Map<string, string[]>(),
   analysisIdByTest: new Map<string, string>(),
   intersectedDatasetIdByTest: new Map<string, string>(),
+  analysisConfigIdByFeature: new Map<string, string>(),
+  analysisOverridesByFeature: new Map<string, any>(),
 };
-

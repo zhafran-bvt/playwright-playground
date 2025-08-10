@@ -1,7 +1,10 @@
 import { expect } from '@playwright/test';
 import { createBdd, test } from 'playwright-bdd';
-import { attachToAllure } from '../../utils/allureHelper';
+import { attachToAllure, attachApiRequest, attachApiResponse, redactedAuthHeader } from '../../utils/allureHelper';
+import { loadJsonFixture } from '../../utils/fixtureHelper';
+import { deepMerge } from '../../utils/objectUtils';
 import { SharedState } from './sharedState';
+import type { TestInfo } from '@playwright/test';
 
 const { Given, When, Then } = createBdd(test);
 
@@ -11,114 +14,111 @@ const ANALYSIS_URL = `${API_BASE_URL}/v1/analysis`;
 const tokenByTest = SharedState.tokenByTest;
 const analysisIdByTest = SharedState.analysisIdByTest;
 const intersectedDatasetIdByTest = SharedState.intersectedDatasetIdByTest;
+const analysisOverridesByFeature = SharedState.analysisOverridesByFeature;
 
-const analysisBody = {
-  datasets: [
-    {
-      id: '7cabbffa-f969-4ee4-83d6-d9fef8f3e224',
-      filter: [],
-      weight: [
-        { schema_id: 'fcb354e6-8ea5-474d-9453-b90717eb192a', weight: 5.88 },
-        { schema_id: '0d2e071a-ede3-4fee-8eef-122474b12788', weight: 5.88 },
-        { schema_id: '7ab70d24-8965-4728-a89c-45952a7919af', weight: 5.88 },
-        { schema_id: '51eb3ba5-5a9c-4309-af22-480ef0339462', weight: 5.88 },
-      ],
-    },
-    {
-      id: '879e0389-b0da-4079-b223-4221e00df82e',
-      filter: [
-        {
-          schema_id: '799a0d1b-70f8-4469-a8f5-f6637d782aa3',
-          filter: { min: 10, max: 1000, include_nulls: false },
-          attribute_code: '',
-        },
-      ],
-      weight: [
-        { schema_id: '4969ea33-ac4a-4461-8f88-3d3ee5b7179a', weight: 5.88 },
-        { schema_id: '5423f030-5475-4aee-b3d4-d38bcd362ca4', weight: 5.88 },
-        { schema_id: '799a0d1b-70f8-4469-a8f5-f6637d782aa3', weight: 5.88 },
-        { schema_id: 'a02289a9-3c0b-4f10-9719-1c9e1f59ba26', weight: 5.88 },
-        { schema_id: 'bb8c4d32-f6c0-415f-a108-f6143dfeffdc', weight: 5.88 },
-      ],
-    },
-    {
-      id: 'd0a1b575-a60f-4adf-9458-b6f6e790a080',
-      filter: [],
-      weight: [
-        { schema_id: 'c5ac3677-185f-4deb-9851-3f22aaa28d9a', weight: 5.88 },
-        { schema_id: '0d1595d9-6c4a-481d-84d6-6e08e71b1af0', weight: 5.88 },
-        { schema_id: '1bb83bba-02fd-4caa-ab27-1d9a72095ffd', weight: 5.88 },
-        { schema_id: '6a7cd88d-da54-4c2a-a2e3-3fefba7b2639', weight: 5.88 },
-        { schema_id: '42cde533-afca-4e5d-985c-1acb1d081930', weight: 5.88 },
-      ],
-    },
-    {
-      id: '60c9410f-ff10-4867-bfb1-54b018ef486a',
-      filter: [],
-      weight: [
-        { schema_id: '46d30da9-a922-4b69-ae90-5e61a13aa9a5', weight: 5.88 },
-        { schema_id: '27329141-a641-4e23-bb43-cc2e31c6415f', weight: 5.88 },
-      ],
-    },
-    {
-      id: 'c9e6bd67-6a93-4a3b-b44b-dc3cbfd38853',
-      filter: [],
-      weight: [{ schema_id: '2fdfbd39-6238-480f-b58e-6752db6fd298', weight: 5.88 }],
-    },
-  ],
-  input: {
-    id: '590c3f10-759d-4e9d-b8ad-7c0d78f09e5e',
-  },
-  output: {
-    output_type: 'TYPE_GRID',
-    grid_config: {
-      grid_type: 'TYPE_GEOHASH',
-      level: 3,
-    },
-    scoring_option: 'SCALED',
-  },
-};
+// Use a feature-scoped key so scenarios within the same feature
+// reuse the same analysis id and related state.
+const scopeKey = ($testInfo: TestInfo) => `${$testInfo.project.name}:${$testInfo.file}`;
+
+function loadAnalysisBodyFromFixture($testInfo: TestInfo, name: string) {
+  const base = loadJsonFixture(`analysis-bodies/${name}`);
+  const overrides = analysisOverridesByFeature.get(scopeKey($testInfo));
+  return overrides ? deepMerge(base, overrides) : base;
+}
 
 When('I create a spatial analysis with default body', async ({ request, $testInfo }) => {
   const token = tokenByTest.get($testInfo.testId)!;
-  await attachToAllure($testInfo, 'analysis-request-body', analysisBody);
+  const analysisBody = loadAnalysisBodyFromFixture($testInfo as TestInfo, 'default.json');
+  await attachApiRequest($testInfo, 'analysis-create-request', {
+    url: ANALYSIS_URL,
+    method: 'POST',
+    headers: { ...redactedAuthHeader(), 'Content-Type': 'application/json' },
+    body: analysisBody,
+  });
   const res = await request.post(ANALYSIS_URL, {
     headers: { authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     data: analysisBody,
   });
   const body = await res.json();
-  await attachToAllure($testInfo, 'analysis-status', res.status().toString());
-  await attachToAllure($testInfo, 'analysis-response', body);
+  await attachApiResponse($testInfo, 'analysis-create-response', { status: res.status(), body });
   expect(res.ok()).toBeTruthy();
   expect(body.id).toBeTruthy();
-  analysisIdByTest.set($testInfo.testId, body.id);
+  analysisIdByTest.set(scopeKey($testInfo as TestInfo), body.id);
 });
 
 Then('I should receive a spatial analysis id', async ({ $testInfo }) => {
-  const id = analysisIdByTest.get($testInfo.testId);
+  const id = analysisIdByTest.get(scopeKey($testInfo as TestInfo));
   expect(typeof id).toBe('string');
   expect((id as string).length).toBeGreaterThan(20);
 });
 
 Given('a spatial analysis exists', async ({ request, $testInfo }) => {
-  if (!analysisIdByTest.get($testInfo.testId)) {
+  const key = scopeKey($testInfo as TestInfo);
+  if (!analysisIdByTest.get(key)) {
     const token = tokenByTest.get($testInfo.testId)!;
-    await attachToAllure($testInfo, 'analysis-request-body-precond', analysisBody);
+    const analysisBody = loadAnalysisBodyFromFixture($testInfo as TestInfo, 'default.json');
+    await attachApiRequest($testInfo, 'analysis-create-precond-request', {
+      url: ANALYSIS_URL,
+      method: 'POST',
+      headers: { ...redactedAuthHeader(), 'Content-Type': 'application/json' },
+      body: analysisBody,
+    });
     const res = await request.post(ANALYSIS_URL, {
       headers: { authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       data: analysisBody,
     });
     const body = await res.json();
-    await attachToAllure($testInfo, 'analysis-precond-status', res.status().toString());
-    await attachToAllure($testInfo, 'analysis-precond-response', body);
+    await attachApiResponse($testInfo, 'analysis-create-precond-response', { status: res.status(), body });
     expect(res.ok()).toBeTruthy();
-    analysisIdByTest.set($testInfo.testId, body.id);
+    analysisIdByTest.set(key, body.id);
+    }
+});
+
+When('I create a spatial analysis from fixture {string}', async ({ request, $testInfo }, fixtureName: string) => {
+  const token = tokenByTest.get($testInfo.testId)!;
+  const analysisBody = loadAnalysisBodyFromFixture($testInfo as TestInfo, fixtureName);
+  await attachApiRequest($testInfo, 'analysis-create-request', {
+    url: ANALYSIS_URL,
+    method: 'POST',
+    headers: { ...redactedAuthHeader(), 'Content-Type': 'application/json' },
+    body: analysisBody,
+  });
+  const res = await request.post(ANALYSIS_URL, {
+    headers: { authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    data: analysisBody,
+  });
+  const body = await res.json();
+  await attachApiResponse($testInfo, 'analysis-create-response', { status: res.status(), body });
+  expect(res.ok()).toBeTruthy();
+  expect(body.id).toBeTruthy();
+  analysisIdByTest.set(scopeKey($testInfo as TestInfo), body.id);
+});
+
+Given('a spatial analysis exists from fixture {string}', async ({ request, $testInfo }, fixtureName: string) => {
+  const key = scopeKey($testInfo as TestInfo);
+  if (!analysisIdByTest.get(key)) {
+    const token = tokenByTest.get($testInfo.testId)!;
+    const analysisBody = loadAnalysisBodyFromFixture($testInfo as TestInfo, fixtureName);
+    await attachApiRequest($testInfo, 'analysis-create-precond-request', {
+      url: ANALYSIS_URL,
+      method: 'POST',
+      headers: { ...redactedAuthHeader(), 'Content-Type': 'application/json' },
+      body: analysisBody,
+    });
+    const res = await request.post(ANALYSIS_URL, {
+      headers: { authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      data: analysisBody,
+    });
+    const body = await res.json();
+    await attachApiResponse($testInfo, 'analysis-create-precond-response', { status: res.status(), body });
+    expect(res.ok()).toBeTruthy();
+    analysisIdByTest.set(key, body.id);
   }
 });
 
 Then('the analysis status should become {string}', async ({ request, $testInfo }, expected: string) => {
   const token = tokenByTest.get($testInfo.testId)!;
-  const id = analysisIdByTest.get($testInfo.testId)!;
+  const id = analysisIdByTest.get(scopeKey($testInfo as TestInfo))!;
   const statusUrl = `${API_BASE_URL}/v1/analysis/${id}/status`;
 
   const maxRetries = 10;
@@ -126,12 +126,19 @@ Then('the analysis status should become {string}', async ({ request, $testInfo }
   let success = false;
   let statusBody: any;
   for (let attempt = 0; attempt < maxRetries; attempt++) {
+    await attachApiRequest($testInfo, `analysis-status-request-attempt-${attempt + 1}`, {
+      url: statusUrl,
+      method: 'GET',
+      headers: { ...redactedAuthHeader() },
+    });
     const statusResponse = await request.get(statusUrl, {
       headers: { authorization: `Bearer ${token}` },
     });
     statusBody = await statusResponse.json();
-    await attachToAllure($testInfo, `status-request-url-attempt-${attempt + 1}`, statusUrl);
-    await attachToAllure($testInfo, `status-response-attempt-${attempt + 1}`, statusBody);
+    await attachApiResponse($testInfo, `analysis-status-response-attempt-${attempt + 1}`, {
+      status: statusResponse.status(),
+      body: statusBody,
+    });
     if (statusBody.id && statusBody.id === id && statusBody.status === expected) {
       success = true;
       break;
@@ -143,18 +150,23 @@ Then('the analysis status should become {string}', async ({ request, $testInfo }
 
 When('I fetch the analysis result datasets', async ({ request, $testInfo }) => {
   const token = tokenByTest.get($testInfo.testId)!;
-  const id = analysisIdByTest.get($testInfo.testId)!;
+  const id = analysisIdByTest.get(scopeKey($testInfo as TestInfo))!;
   const resultUrl = `${API_BASE_URL}/v1/analysis/${id}`;
+  await attachApiRequest($testInfo, 'analysis-result-request', {
+    url: resultUrl,
+    method: 'GET',
+    headers: { ...redactedAuthHeader() },
+  });
   const res = await request.get(resultUrl, { headers: { authorization: `Bearer ${token}` } });
   const body = await res.json();
-  await attachToAllure($testInfo, 'result-datasets-response', body);
+  await attachApiResponse($testInfo, 'analysis-result-response', { status: res.status(), body });
   expect(body).toHaveProperty('result');
   expect(Array.isArray(body.result)).toBeTruthy();
   // Pick intersected dataset id (name != 'spatial analysis result') for downstream step
   const found = body.result && Array.isArray(body.result)
     ? body.result.find((ds: any) => ds.name !== 'spatial analysis result')
     : undefined;
-  if (found?.dataset_id) intersectedDatasetIdByTest.set($testInfo.testId, found.dataset_id);
+  if (found?.dataset_id) intersectedDatasetIdByTest.set(scopeKey($testInfo as TestInfo), found.dataset_id);
 });
 
 Then('the result datasets should be returned', async () => {
@@ -162,34 +174,58 @@ Then('the result datasets should be returned', async () => {
   expect(true).toBeTruthy();
 });
 
-When('I fetch an intersected dataset from the analysis results', async ({ request, $testInfo }) => {
+Then('I fetch an intersected dataset from the analysis results', async ({ request, $testInfo }) => {
   const token = tokenByTest.get($testInfo.testId)!;
-  const id = analysisIdByTest.get($testInfo.testId)!;
-  const intersectedId = intersectedDatasetIdByTest.get($testInfo.testId);
+  const id = analysisIdByTest.get(scopeKey($testInfo as TestInfo))!;
+  const intersectedId = intersectedDatasetIdByTest.get(scopeKey($testInfo as TestInfo));
   expect(intersectedId, 'Intersected dataset id should be available').toBeTruthy();
   const url = `${API_BASE_URL}/v1/analysis/${id}/datasets?ids=${intersectedId}`;
-  await attachToAllure($testInfo, 'intersected-dataset-url', url);
+  await attachApiRequest($testInfo, 'analysis-intersected-dataset-request', {
+    url,
+    method: 'GET',
+    headers: { ...redactedAuthHeader() },
+  });
   const res = await request.get(url, { headers: { authorization: `Bearer ${token}` } });
   const body = await res.json();
-  await attachToAllure($testInfo, 'intersected-dataset-response', body);
+  await attachApiResponse($testInfo, 'analysis-intersected-dataset-response', { status: res.status(), body });
 });
 
 Then('the intersected dataset should match the requested id', async ({ $testInfo }) => {
   // We can’t access the last response object here directly; rely on attachment and id presence
-  const intersectedId = intersectedDatasetIdByTest.get($testInfo.testId)!;
+  const intersectedId = intersectedDatasetIdByTest.get(scopeKey($testInfo as TestInfo))!;
   expect(typeof intersectedId).toBe('string');
   expect(intersectedId.length).toBeGreaterThan(10);
 });
 
-When('I fetch the analysis summary', async ({ request, $testInfo }) => {
+Then('I fetch the analysis summary', async ({ request, $testInfo }) => {
   const token = tokenByTest.get($testInfo.testId)!;
-  const id = analysisIdByTest.get($testInfo.testId)!;
+  const id = analysisIdByTest.get(scopeKey($testInfo as TestInfo))!;
   const url = `${API_BASE_URL}/v1/analysis/${id}/summary`;
-  await attachToAllure($testInfo, 'summary-request-url', url);
+  await attachApiRequest($testInfo, 'analysis-summary-request', {
+    url,
+    method: 'GET',
+    headers: { ...redactedAuthHeader() },
+  });
   const res = await request.get(url, { headers: { authorization: `Bearer ${token}` } });
   const body = await res.json();
-  await attachToAllure($testInfo, 'summary-response', body);
+  await attachApiResponse($testInfo, 'analysis-summary-response', { status: res.status(), body });
   // stash in global for the Then step
+  (global as any).__lastSummary = body;
+});
+
+// Alias to support lowercase 'i' in feature step text
+Then('i fetch the analysis summary', async ({ request, $testInfo }) => {
+  const token = tokenByTest.get($testInfo.testId)!;
+  const id = analysisIdByTest.get(scopeKey($testInfo as TestInfo))!;
+  const url = `${API_BASE_URL}/v1/analysis/${id}/summary`;
+  await attachApiRequest($testInfo, 'analysis-summary-request', {
+    url,
+    method: 'GET',
+    headers: { ...redactedAuthHeader() },
+  });
+  const res = await request.get(url, { headers: { authorization: `Bearer ${token}` } });
+  const body = await res.json();
+  await attachApiResponse($testInfo, 'analysis-summary-response', { status: res.status(), body });
   (global as any).__lastSummary = body;
 });
 
@@ -201,4 +237,29 @@ Then('the summary should include general statistics', async () => {
   expect(body.data.general).toHaveProperty('max_score');
   expect(body.data.general).toHaveProperty('median_score');
   expect(body.data.general).toHaveProperty('min_score');
+});
+
+// Override step definitions to customize payload per feature
+Given('I set analysis output type to {string}', async ({ $testInfo }, outputType: string) => {
+  const key = scopeKey($testInfo as TestInfo);
+  const current = analysisOverridesByFeature.get(key) || {};
+  analysisOverridesByFeature.set(key, deepMerge(current, { output: { output_type: outputType } }));
+});
+
+Given('I set grid type to {string} and level {int}', async ({ $testInfo }, gridType: string, level: number) => {
+  const key = scopeKey($testInfo as TestInfo);
+  const current = analysisOverridesByFeature.get(key) || {};
+  analysisOverridesByFeature.set(key, deepMerge(current, { output: { grid_config: { grid_type: gridType, level } } }));
+});
+
+Given('I set scoring option to {string}', async ({ $testInfo }, scoring: string) => {
+  const key = scopeKey($testInfo as TestInfo);
+  const current = analysisOverridesByFeature.get(key) || {};
+  analysisOverridesByFeature.set(key, deepMerge(current, { output: { scoring_option: scoring } }));
+});
+
+Given('I set input id to {string}', async ({ $testInfo }, inputId: string) => {
+  const key = scopeKey($testInfo as TestInfo);
+  const current = analysisOverridesByFeature.get(key) || {};
+  analysisOverridesByFeature.set(key, deepMerge(current, { input: { id: inputId } }));
 });
