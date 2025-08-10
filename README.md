@@ -82,6 +82,10 @@ cd playwright-playground
 npm install
 # or
 yarn install
+
+# Copy environment template
+cp .env.example .env
+// Then edit .env with your values
 ```
 
 ### Environment Setup
@@ -97,6 +101,7 @@ API_CLIENT_ID=your_client_id
 # Optional (defaults in code)
 # PW_CHANNEL=chrome
 # WEB_BASE_URL=https://staging.lokasi.com
+# ANALYTICS_BASE_URL=https://staging.services.bvarta.com/analytics
 ```
 
 ---
@@ -152,6 +157,32 @@ TEST_PASSWORD=...
 API_BASE_URL=...
 API_CLIENT_ID=...
 ```
+
+---
+
+## How To Add New Scenarios
+
+- Location:
+  - API scenarios: add `.feature` files under `features/api/` and tag scenarios with `@api`.
+  - Web/UI scenarios: add under `features/web/` and tag scenarios with `@web`.
+
+- API spatial analysis:
+  - Base payloads live in `tests/fixtures/analysis-bodies/*.json`.
+  - Use defaults: `When I create a spatial analysis with default body`.
+  - Use a specific payload: `When I create a spatial analysis from fixture "my_scenario.json"`.
+  - Override parts of payload in the scenario:
+    - `Given I set analysis output type to "TYPE_GRID"` (or `TYPE_SITE_PROFILING`)
+    - `Given I set grid type to "TYPE_GEOHASH" and level 3`
+    - `Given I set scoring option to "SCALED"`
+    - `Given I set input id to "<uuid>"`
+
+- Full-flow example in one scenario (API):
+  - Create → receive id → wait for SUCCESS → fetch results → fetch intersected → fetch summary.
+  - See `features/api/api_spatial_analysis_full.feature` for templates.
+
+- Web auth:
+  - Prefer using a Background like `Given I am logged in` in `@web` features.
+  - Steps and hooks will attach screenshots for each step to Allure.
 
 ---
 
